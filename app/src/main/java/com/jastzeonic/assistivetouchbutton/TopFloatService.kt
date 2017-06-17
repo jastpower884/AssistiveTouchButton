@@ -9,12 +9,12 @@ import android.R.attr.y
 import android.R.attr.x
 import android.R.attr.gravity
 import android.graphics.PixelFormat
+import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.*
 import android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION
-
-
+import android.support.annotation.RequiresApi
 
 
 class TopFloatService : Service() {
@@ -31,12 +31,10 @@ class TopFloatService : Service() {
     var isMoving: Boolean = false;
 
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate() {
         super.onCreate()
         windowManager = application.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-
-        val myIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-        startActivity(myIntent)
 
         ballView = LayoutInflater.from(this).inflate(R.layout.floatball, null, false)
         floatImage = ballView as ImageView
@@ -63,14 +61,7 @@ class TopFloatService : Service() {
 
     val onTouchListener: View.OnTouchListener = View.OnTouchListener { view, event ->
         x = event.rawX.toInt().toFloat()
-        y = event.rawY.toInt().toFloat()
-
-        Log.v("TopFloatService", "event.action:" + event.action)
-        Log.v("TopFloatService", "event.X:" + event.x)
-        Log.v("TopFloatService", "event.rawX:" + event.rawX)
-        Log.v("TopFloatService", "event.Y:" + event.y)
-        Log.v("TopFloatService", "event.rawY:" + event.rawY)
-
+        y = event.rawY.toInt().toFloat() - getStatusBarHeight()
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 isMoving = false
@@ -96,5 +87,15 @@ class TopFloatService : Service() {
         ballWindowManagerParams.x = (x - touchStartX).toInt()
         ballWindowManagerParams.y = (y - touchStartY).toInt()
         windowManager.updateViewLayout(ballView, ballWindowManagerParams)
+    }
+
+    var mStatusBarHeight: Int = 0
+
+    fun getStatusBarHeight(): Int {
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        if (resourceId > 0) {
+            mStatusBarHeight = resources.getDimensionPixelSize(resourceId)
+        }
+        return mStatusBarHeight
     }
 }
